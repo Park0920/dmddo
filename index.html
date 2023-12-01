@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+        button {
+            font-size: 16px;
+            margin: 10px;
+        }
+    </style>
+    <title>블럭 부수기 게임</title>
+</head>
+<body>
+    <canvas id="gameCanvas" width="500" height="300"></canvas>
+    <button onmousedown="startMovingLeft()" onmouseup="stopMoving()" ontouchstart="startMovingLeft()" ontouchend="stopMoving()">Move Left</button>
+    <button onmousedown="startMovingRight()" onmouseup="stopMoving()" ontouchstart="startMovingRight()" ontouchend="stopMoving()">Move Right</button>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 블럭 설정
+        const blockWidth = 50;
+        const blockHeight = 20;
+        const blocks = [];
+
+        for (let i = 0; i < 5; i++) {
+            for (let j = 0; j < 10; j++) {
+                blocks.push({ x: j * blockWidth, y: i * blockHeight, width: blockWidth, height: blockHeight, status: 1 });
+            }
+        }
+
+        // 공 설정
+        const ball = { x: canvas.width / 2, y: canvas.height - 30, radius: 10, dx: 5, dy: -5 };
+
+        // 패들 설정
+        const paddleHeight = 10;
+        const paddleWidth = 60;
+        const paddle = { x: (canvas.width - paddleWidth) / 2, y: canvas.height - paddleHeight, width: paddleWidth, height: paddleHeight, dx: 10 }; // 패들의 속도를 2배로 증가
+
+        // 패들 이동 상태 변수
+        let isMovingLeft = false;
+        let isMovingRight = false;
+
+        // 키보드 조작
+        document.addEventListener('keydown', keyDownHandler);
+        document.addEventListener('keyup', keyUpHandler);
+
+        function keyDownHandler(e) {
+            if (e.key === 'Right' || e.key === 'ArrowRight') {
+                isMovingRight = true;
+            } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+                isMovingLeft = true;
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.key === 'Right' || e.key === 'ArrowRight') {
+                isMovingRight = false;
+            } else if (e.key === 'Left' || e.key === 'ArrowLeft') {
+                isMovingLeft = false;
+            }
+        }
+
+        // 충돌 감지 함수
+        function collisionDetection() {
+            for (let block of blocks) {
+                if (block.status === 1) {
+                    if (ball.x > block.x && ball.x < block.x + block.width && ball.y > block.y && ball.y < block.y + block.height) {
+                        ball.dy = -ball.dy;
+                        block.status = 0;
+                    }
+                }
+            }
+        }
+
+        // 패들 이동 함수
+        function movePaddleLeft() {
+            if (paddle.x > 0) {
+                paddle.x -= paddle.dx;
+            }
+        }
+
+        function movePaddleRight() {
+            if (paddle.x < canvas.width - paddle.width) {
+                paddle.x += paddle.dx;
+            }
+        }
+
+        // 시작과 정지 함수
+        function startMovingLeft() {
+            isMovingLeft = true;
+        }
+
+        function startMovingRight() {
+            isMovingRight = true;
+        }
+
+        function stopMoving() {
+            isMovingLeft = false;
+            isMovingRight = false;
+        }
+
+        // 게임 그리기 함수
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 블럭 그리기
+            blocks.forEach(block => {
+                if (block.status === 1) {
+                    ctx.beginPath();
+                    ctx.rect(block.x, block.y, block.width, block.height);
+                    ctx.fillStyle = '#0095DD';
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            });
+
+            // 공 그리기
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#0095DD';
+            ctx.fill();
+            ctx.closePath();
+
+            // 패들 그리기
+            ctx.beginPath();
+            ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
+            ctx.fillStyle = '#0095DD';
+            ctx.fill();
+            ctx.closePath();
+
+            // 충돌 감지
+            collisionDetection();
+
+            // 패들 이동
+            if (isMovingRight && paddle.x < canvas.width - paddle.width) {
+                paddle.x += paddle.dx;
+            } else if (isMovingLeft && paddle.x > 0) {
+                paddle.x -= paddle.dx;
+            }
+
+            // 공 이동
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // 공이 벽에 부딪힐 때 처리
+            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                ball.dx = -ball.dx;
+            }
+
+            // 공이 위쪽 벽에 부딪힐 때 처리
+            if (ball.y - ball.radius < 0) {
+                ball.dy = -ball.dy;
+            }
+
+            // 공이 패들에 부딪힐 때 처리
+            if (ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.width) {
+                ball.dy = -ball.dy;
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        // 게임 시작
+        draw();
+    </script>
+</body>
+</html>
